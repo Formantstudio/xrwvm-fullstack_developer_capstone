@@ -1,6 +1,7 @@
-# START server/.flake8
+# START .flake8
 [flake8]
 exclude =
-    djangoapp/migrations/*
-max-line-length = 120
-# END server/.flake8
+    */migrations/*,
+    server/djangoproj/settings.py,
+    server/djangoproj/urls.py
+# END .flake8
