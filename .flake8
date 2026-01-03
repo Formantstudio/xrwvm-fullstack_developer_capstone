@@ -1,0 +1,7 @@
+# START .flake8
+[flake8]
+exclude =
+    */migrations/*,
+    server/djangoproj/settings.py,
+    server/djangoproj/urls.py
+# END .flake8
