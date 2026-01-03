@@ -1,21 +1,11 @@
-# START views.py (lint clean, same behavior)
-# Uncomment the required imports before adding the code
-
-from django.shortcuts import render  # noqa: F401
-from django.http import HttpResponseRedirect, HttpResponse  # noqa: F401
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404, redirect  # noqa: F401
-from django.contrib.auth import logout
-from django.contrib import messages  # noqa: F401
-from datetime import datetime  # noqa: F401
-
+from django.contrib.auth import logout, login, authenticate
 from django.http import JsonResponse
-from django.contrib.auth import login, authenticate
+from django.views.decorators.csrf import csrf_exempt
 import logging
 import json
-from django.views.decorators.csrf import csrf_exempt
 from .populate import initiate
-from .models import CarMake, CarModel  # noqa: F401
+from .models import CarModel
 from .restapis import get_request, analyze_review_sentiments, post_review
 
 # Get an instance of a logger
@@ -46,8 +36,8 @@ def login_user(request):
 
 # Create a `logout_request` view to handle sign out request
 def logout_request(request):
-    logout(request)  # Terminate user session
-    data = {"userName": ""}  # Return empty username
+    logout(request)
+    data = {"userName": ""}
     return JsonResponse(data)
 
 
@@ -92,7 +82,10 @@ def get_cars(request):
     car_models = CarModel.objects.select_related("car_make")
     cars = []
     for car_model in car_models:
-        cars.append({"CarModel": car_model.name, "CarMake": car_model.car_make.name})
+        cars.append({
+            "CarModel": car_model.name,
+            "CarMake": car_model.car_make.name
+        })
 
     return JsonResponse({"CarModels": cars})
 
@@ -116,10 +109,10 @@ def get_dealer_reviews(request, dealer_id):
         reviews = get_request(endpoint)
 
         for review_detail in reviews:
-            response = analyze_review_sentiments(review_detail["review"])
+            sentiment_resp = analyze_review_sentiments(review_detail["review"])
 
-            if response and "sentiment" in response:
-                review_detail["sentiment"] = response["sentiment"]
+            if sentiment_resp and "sentiment" in sentiment_resp:
+                review_detail["sentiment"] = sentiment_resp["sentiment"]
             else:
                 review_detail["sentiment"] = "neutral"
 
@@ -140,13 +133,16 @@ def get_dealer_details(request, dealer_id):
 
 # Create a `add_review` view to submit a review
 def add_review(request):
-    if request.user.is_anonymous is False:
+    if not request.user.is_anonymous:
         data = json.loads(request.body)
         try:
             post_review(data)
             return JsonResponse({"status": 200})
-        except Exception:
-            return JsonResponse({"status": 401, "message": "Error in posting review"})
+        except Exception as err:
+            logger.error(f"Error in post_review: {err}")
+            return JsonResponse({
+                "status": 401,
+                "message": "Error in posting review"
+            })
 
     return JsonResponse({"status": 403, "message": "Unauthorized"})
-# END views.py
