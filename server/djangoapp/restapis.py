@@ -1,4 +1,3 @@
-# Uncomment the imports below before you add the function code
 import requests
 import os
 from dotenv import load_dotenv
@@ -22,7 +21,6 @@ def get_request(endpoint, **kwargs):
     except Exception as err:
         print(f"Unexpected {err=}, {type(err)=}")
         return None
-
 
 
 def analyze_review_sentiments(text):
